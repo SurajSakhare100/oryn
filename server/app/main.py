@@ -36,19 +36,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Protect against host header attacks
-# Match allowed hosts against CORS origins, or default to all
-host_origins = [
-    origin.split("://")[-1].split(":")[0] 
-    for origin in cors_origins 
-    if origin != "*"
-]
-if not host_origins:
-    host_origins = ["*"]
-
+# TrustedHostMiddleware: allow all hosts since CORS already enforces origin restrictions.
+# Note: allowed_hosts here refers to the SERVER's Host header, not client origins.
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=host_origins
+    allowed_hosts=["*"]
 )
 
 # Rate limiting: 60 requests per minute per IP
