@@ -10,10 +10,7 @@ from app.middleware.error_handler import ErrorHandlerMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: connect to PostgreSQL via Prisma
-    await connect_db()
     yield
-    # Shutdown: close PostgreSQL connection
     await close_db()
 
 app = FastAPI(
@@ -35,9 +32,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# TrustedHostMiddleware: allow all hosts since CORS already enforces origin restrictions.
-# Note: allowed_hosts here refers to the SERVER's Host header, not client origins.
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=["*"]
