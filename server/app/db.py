@@ -14,15 +14,18 @@ db_helper = Database()
 def run_prisma_db_push():
     """
     Runs 'prisma db push' to automatically synchronize the schema to the database.
+    Uses DIRECT_URL for the migration connection (required for Supabase pooler setups).
     """
     try:
         logger.info("Synchronizing database schema via Prisma db push...")
-        # Try running using prisma CLI directly, fallback to python -m prisma
         env = os.environ.copy()
         env["DATABASE_URL"] = settings.DATABASE_URL
-        
+        # DIRECT_URL is needed by Prisma to bypass the pooler for schema migrations
+        if hasattr(settings, "DIRECT_URL") and settings.DIRECT_URL:
+            env["DIRECT_URL"] = settings.DIRECT_URL
+
         result = subprocess.run(
-            ["prisma", "db", "push"],
+            ["prisma", "db", "push", "--skip-generate"],
             capture_output=True,
             text=True,
             env=env
@@ -30,18 +33,19 @@ def run_prisma_db_push():
         if result.returncode != 0:
             # Fallback to python -m prisma
             result = subprocess.run(
-                ["python", "-m", "prisma", "db", "push"],
+                ["python", "-m", "prisma", "db", "push", "--skip-generate"],
                 capture_output=True,
                 text=True,
                 env=env
             )
-            
+
         if result.returncode == 0:
             logger.info("Database schema synchronized successfully")
         else:
             logger.error(f"Failed to push database schema. Stderr: {result.stderr}")
     except Exception as e:
         logger.error(f"Error executing database schema synchronization: {e}")
+
 
 async def connect_db():
     try:
