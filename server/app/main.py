@@ -24,18 +24,31 @@ app = FastAPI(
 )
 
 # Enable CORS for the client frontend
+cors_origins = [origin.strip() for origin in settings.ALLOWED_CORS_ORIGINS.split(",") if origin.strip()]
+if not cors_origins:
+    cors_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust for production
-    allow_credentials=True,
+    allow_origins=cors_origins,
+    allow_credentials=True if "*" not in cors_origins else False, # Credentials must be disabled if wildcard * is allowed in FastAPI
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Protect against host header attacks
+# Match allowed hosts against CORS origins, or default to all
+host_origins = [
+    origin.split("://")[-1].split(":")[0] 
+    for origin in cors_origins 
+    if origin != "*"
+]
+if not host_origins:
+    host_origins = ["*"]
+
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"]  # Allow all for development/deployment flexibility
+    allowed_hosts=host_origins
 )
 
 # Rate limiting: 60 requests per minute per IP

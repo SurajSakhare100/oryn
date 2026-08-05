@@ -28,4 +28,8 @@ class Settings:
     # JWT Settings
     JWT_SECRET: str = os.getenv("JWT_SECRET", "")
 
+    # CORS Settings
+    ALLOWED_CORS_ORIGINS: str = os.getenv("ALLOWED_CORS_ORIGINS", "*")
+
 settings = Settings()
+
