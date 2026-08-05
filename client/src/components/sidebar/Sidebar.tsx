@@ -1,7 +1,6 @@
-"use client";
-
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   Search,
   Plus,
@@ -12,6 +11,7 @@ import {
   ChevronRight,
   Clock,
   LogIn,
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { Conversation } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,7 @@ interface SidebarProps {
   activeId: string | null;
   onSelect: (id: string) => void;
   onNewChat: () => void;
-  user: { id: string; email: string } | null;
+  user: { id: string; email: string; username: string } | null;
   onLogout: () => void;
   onLoginClick: () => void;
 }
@@ -47,7 +47,6 @@ export default function Sidebar({
 }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState("");
-  const [dark, setDark] = useState(true);
 
   const filtered = conversations.filter((c) =>
     c.title.toLowerCase().includes(search.toLowerCase())
@@ -57,7 +56,7 @@ export default function Sidebar({
     <motion.aside
       animate={{ width: collapsed ? 64 : 280 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="relative flex flex-col h-full bg-zinc-950 border-r border-zinc-800 overflow-hidden shrink-0"
+      className="relative flex flex-col h-full bg-zinc-950 border-r border-zinc-800 overflow-hidden shrink-0 font-sans"
     >
       {/* Toggle button */}
       <button
@@ -68,7 +67,7 @@ export default function Sidebar({
       </button>
 
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-zinc-800">
+      <Link href="/" className="flex items-center gap-3 px-4 py-5 border-b border-zinc-800 hover:bg-zinc-900/20 transition-colors">
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center shrink-0">
           <span className="text-white font-bold text-sm">O</span>
         </div>
@@ -85,7 +84,7 @@ export default function Sidebar({
             </motion.span>
           )}
         </AnimatePresence>
-      </div>
+      </Link>
 
       {/* New chat button */}
       <div className="px-3 py-3">
@@ -176,17 +175,34 @@ export default function Sidebar({
         )}
       </div>
 
+      {/* Settings Navigation */}
+      {user && (
+        <div className="px-3 py-1">
+          <Link
+            href="/settings"
+            className={cn(
+              "flex items-center gap-3 w-full rounded-lg px-3 py-2 text-sm font-medium",
+              "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 transition-colors",
+              collapsed && "justify-center px-0"
+            )}
+          >
+            <SettingsIcon size={16} className="shrink-0" />
+            {!collapsed && <span>Settings</span>}
+          </Link>
+        </div>
+      )}
+
       {/* User profile */}
       <div className="border-t border-zinc-800 px-3 py-3 flex items-center gap-3">
         {user ? (
           <>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 text-white text-xs font-bold uppercase">
-              {user.email[0]}
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center shrink-0 text-zinc-950 text-xs font-bold uppercase">
+              {user.username ? user.username[0] : user.email[0]}
             </div>
             {!collapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-white font-medium truncate">
-                  {user.email.split("@")[0]}
+                  {user.username || user.email.split("@")[0]}
                 </p>
                 <p className="text-xs text-zinc-500 truncate">{user.email}</p>
               </div>
@@ -217,3 +233,4 @@ export default function Sidebar({
     </motion.aside>
   );
 }
+

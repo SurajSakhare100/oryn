@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/components/sidebar/Sidebar";
 import ChatWindow from "@/components/chat/ChatWindow";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
-import AuthModal from "@/components/auth/AuthModal";
 
 export default function AppLayout() {
-  const { user, token, login, signup, logout } = useAuth();
+  const router = useRouter();
+  const { user, token, logout } = useAuth();
   const {
     conversations,
     activeConversation,
@@ -27,10 +28,14 @@ export default function AppLayout() {
     setWebSearchEnabled,
   } = useChat(token);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
 
   return (
-    <div className="flex h-screen bg-zinc-950 overflow-hidden">
+    <div className="flex h-screen bg-zinc-950 overflow-hidden font-sans">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
         <Sidebar
@@ -39,8 +44,8 @@ export default function AppLayout() {
           onSelect={selectConversation}
           onNewChat={newChat}
           user={user}
-          onLogout={logout}
-          onLoginClick={() => setAuthModalOpen(true)}
+          onLogout={handleLogout}
+          onLoginClick={() => router.push("/login")}
         />
       </div>
 
@@ -68,8 +73,8 @@ export default function AppLayout() {
                 onSelect={(id) => { selectConversation(id); setMobileOpen(false); }}
                 onNewChat={() => { newChat(); setMobileOpen(false); }}
                 user={user}
-                onLogout={logout}
-                onLoginClick={() => { setAuthModalOpen(true); setMobileOpen(false); }}
+                onLogout={handleLogout}
+                onLoginClick={() => { router.push("/login"); setMobileOpen(false); }}
               />
             </motion.div>
           </>
@@ -95,7 +100,7 @@ export default function AppLayout() {
 
           {!user && (
             <button
-              onClick={() => setAuthModalOpen(true)}
+              onClick={() => router.push("/login")}
               className="px-3 py-1 rounded-lg text-xs font-semibold bg-teal-500 text-zinc-950 hover:bg-teal-400 transition-colors"
             >
               Sign In
@@ -115,15 +120,7 @@ export default function AppLayout() {
           setWebSearchEnabled={setWebSearchEnabled}
         />
       </div>
-
-      {/* Authentication Modal Popup */}
-      {authModalOpen && (
-        <AuthModal
-          onClose={() => setAuthModalOpen(false)}
-          login={login}
-          signup={signup}
-        />
-      )}
     </div>
   );
 }
+

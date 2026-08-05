@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from app.schemas.auth import UserAuthRequest, TokenResponse, UserResponse
+from app.schemas.auth import UserAuthRequest, UserRegisterRequest, TokenResponse, UserResponse
 from app.db import db_helper
 from app.services.auth_service import hash_password, verify_password, create_access_token
 from app.dependencies import get_current_user_id
@@ -9,11 +9,12 @@ logger = logging.getLogger("uvicorn")
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 @router.post("/signup", response_model=TokenResponse)
-async def signup(request: UserAuthRequest):
+async def signup(request: UserRegisterRequest):
     """
-    Register a new user and return a JWT access token.
+    Register a new user with email, username, and password, and return a JWT access token.
     """
     email = request.email.lower().strip()
+    username = request.username.strip()
     password = request.password
     
     if not db_helper.prisma or not db_helper.prisma.is_connected():
@@ -24,13 +25,23 @@ async def signup(request: UserAuthRequest):
         
     try:
         # Check if email already exists
-        existing_user = await db_helper.prisma.user.find_unique(
+        existing_email = await db_helper.prisma.user.find_unique(
             where={"email": email}
         )
-        if existing_user:
+        if existing_email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User with this email already exists"
+            )
+            
+        # Check if username already exists
+        existing_username = await db_helper.prisma.user.find_unique(
+            where={"username": username}
+        )
+        if existing_username:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username is already taken"
             )
             
         # Hash password and create user
@@ -38,6 +49,7 @@ async def signup(request: UserAuthRequest):
         user = await db_helper.prisma.user.create(
             data={
                 "email": email,
+                "username": username,
                 "passwordHash": password_hash
             }
         )
@@ -48,7 +60,8 @@ async def signup(request: UserAuthRequest):
             accessToken=token,
             tokenType="bearer",
             userId=user.id,
-            email=user.email
+            email=user.email,
+            username=user.username
         )
     except HTTPException:
         raise
@@ -88,7 +101,8 @@ async def login(request: UserAuthRequest):
             accessToken=token,
             tokenType="bearer",
             userId=user.id,
-            email=user.email
+            email=user.email,
+            username=user.username
         )
     except HTTPException:
         raise
@@ -119,7 +133,7 @@ async def get_me(user_id: str = Depends(get_current_user_id)):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
-        return UserResponse(id=user.id, email=user.email)
+        return UserResponse(id=user.id, email=user.email, username=user.username)
     except HTTPException:
         raise
     except Exception as e:
@@ -128,3 +142,4 @@ async def get_me(user_id: str = Depends(get_current_user_id)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An error occurred while fetching user details"
         )
+

@@ -7,6 +7,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 export interface User {
   id: string;
   email: string;
+  username: string;
 }
 
 export function useAuth() {
@@ -43,7 +44,7 @@ export function useAuth() {
     }
 
     const data = await res.json();
-    const newUser = { id: data.userId, email: data.email };
+    const newUser = { id: data.userId, email: data.email, username: data.username };
     
     localStorage.setItem("oryn_token", data.accessToken);
     localStorage.setItem("oryn_user", JSON.stringify(newUser));
@@ -53,11 +54,11 @@ export function useAuth() {
     return newUser;
   }, []);
 
-  const signup = useCallback(async (email: string, password: string) => {
+  const signup = useCallback(async (email: string, username: string, password: string) => {
     const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, username, password }),
     });
 
     if (!res.ok) {
@@ -66,7 +67,7 @@ export function useAuth() {
     }
 
     const data = await res.json();
-    const newUser = { id: data.userId, email: data.email };
+    const newUser = { id: data.userId, email: data.email, username: data.username };
 
     localStorage.setItem("oryn_token", data.accessToken);
     localStorage.setItem("oryn_user", JSON.stringify(newUser));
@@ -92,3 +93,4 @@ export function useAuth() {
     logout,
   };
 }
+
