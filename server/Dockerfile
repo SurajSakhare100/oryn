@@ -34,8 +34,8 @@ ENV PATH="/app/.venv/bin:$PATH"
 # Run Prisma generate to generate the database client
 RUN prisma generate --schema=prisma/schema.prisma
 
-# Expose FastAPI default port
-EXPOSE 8000
+# Expose port (Render uses $PORT env variable, default 10000)
+EXPOSE 10000
 
-# Start FastAPI application
-CMD ["/app/.venv/bin/python", "main.py"]
+# Start FastAPI via uvicorn - reads PORT from environment (Render injects this automatically)
+CMD ["/bin/sh", "-c", "/app/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
