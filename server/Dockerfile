@@ -36,8 +36,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Copy virtualenv and project code
+# Copy virtualenv, prisma binaries, and project code
 COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /root/.cache/prisma-python /root/.cache/prisma-python
 COPY . /app
 
 # Set path to use virtualenv
