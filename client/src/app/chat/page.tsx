@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 
+import { getCookie } from "@/lib/cookies";
+
 export default function ChatPage() {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("oryn_token");
+    const token = getCookie("oryn_token");
     if (!token) {
       router.push("/login");
     } else {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { getCookie, setCookie, deleteCookie } from "@/lib/cookies";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -15,20 +16,32 @@ export function useAuth() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if token exists in localStorage on mount
+  // Check if token exists in cookies on mount and fetch user profile
   useEffect(() => {
-    const savedToken = localStorage.getItem("oryn_token");
-    const savedUser = localStorage.getItem("oryn_user");
-    if (savedToken && savedUser) {
-      try {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem("oryn_token");
-        localStorage.removeItem("oryn_user");
+    async function fetchUser() {
+      const savedToken = getCookie("oryn_token");
+      if (savedToken) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+            headers: {
+              "Authorization": `Bearer ${savedToken}`
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUser({ id: data.id, email: data.email, username: data.username });
+            setToken(savedToken);
+          } else {
+            // Token is invalid or expired
+            deleteCookie("oryn_token");
+          }
+        } catch (e) {
+          console.error("Failed to fetch user on mount:", e);
+        }
       }
+      setLoading(false);
     }
-    setLoading(false);
+    fetchUser();
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -46,8 +59,8 @@ export function useAuth() {
     const data = await res.json();
     const newUser = { id: data.userId, email: data.email, username: data.username };
     
-    localStorage.setItem("oryn_token", data.accessToken);
-    localStorage.setItem("oryn_user", JSON.stringify(newUser));
+    // Set secure cookie
+    setCookie("oryn_token", data.accessToken);
     
     setToken(data.accessToken);
     setUser(newUser);
@@ -69,8 +82,8 @@ export function useAuth() {
     const data = await res.json();
     const newUser = { id: data.userId, email: data.email, username: data.username };
 
-    localStorage.setItem("oryn_token", data.accessToken);
-    localStorage.setItem("oryn_user", JSON.stringify(newUser));
+    // Set secure cookie
+    setCookie("oryn_token", data.accessToken);
 
     setToken(data.accessToken);
     setUser(newUser);
@@ -78,8 +91,7 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem("oryn_token");
-    localStorage.removeItem("oryn_user");
+    deleteCookie("oryn_token");
     setToken(null);
     setUser(null);
   }, []);
@@ -93,4 +105,5 @@ export function useAuth() {
     logout,
   };
 }
+
 

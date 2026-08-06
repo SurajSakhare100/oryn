@@ -6,6 +6,8 @@ import Link from "next/link";
 import { LogIn, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
+import { getCookie } from "@/lib/cookies";
+
 export default function LoginPage() {
   const router = useRouter();
   const { login, user } = useAuth();
@@ -16,7 +18,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     // If user is already logged in, redirect to chat immediately
-    const token = localStorage.getItem("oryn_token");
+    const token = getCookie("oryn_token");
     if (token) {
       router.push("/chat");
     }

@@ -25,7 +25,7 @@ An open-source AI-powered answer engine (like Perplexity) built with Next.js, Fa
 
 ```bash
 # Backend
-cd server && uv run python main.py
+cd server && uv run uvicorn app.main:app --reload
 
 # Frontend
 cd client && npm run dev

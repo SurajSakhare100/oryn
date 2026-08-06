@@ -4,13 +4,14 @@ import Link from "next/link";
 import { Search, Compass, Shield, Zap, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getCookie } from "@/lib/cookies";
 
 export default function LandingPage() {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("oryn_token");
+    const token = getCookie("oryn_token");
     if (token) {
       setIsLoggedIn(true);
     }
@@ -124,7 +125,7 @@ export default function LandingPage() {
                     <Search size={12} className="animate-spin" />
                     Searching Web and synthesizing citations...
                   </div>
-                  
+
                   <div className="text-sm text-zinc-400 space-y-3 leading-relaxed">
                     <p>
                       In early 2026, researchers achieved a record net energy gain of Q=1.8 at the National Ignition Facility using an upgraded target design <span className="text-teal-400 font-semibold text-xs bg-teal-950/40 border border-teal-800/40 px-1.5 py-0.5 rounded ml-1">[1]</span>. Concurrently, commercial magnet advancements have enabled compact tokamaks to maintain stable plasma temperatures exceeding 150 million degrees Celsius <span className="text-teal-400 font-semibold text-xs bg-teal-950/40 border border-teal-800/40 px-1.5 py-0.5 rounded ml-1">[2]</span>.

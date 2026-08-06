@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ArrowLeft, User, Key, Database, Trash2, Shield, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
+import { getCookie } from "@/lib/cookies";
+
 export default function SettingsPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -13,7 +15,7 @@ export default function SettingsPage() {
   const [modelPref, setModelPref] = useState("llama-3.3-70b-versatile");
 
   useEffect(() => {
-    const token = localStorage.getItem("oryn_token");
+    const token = getCookie("oryn_token");
     if (!token) {
       router.push("/login");
     } else {
@@ -35,7 +37,7 @@ export default function SettingsPage() {
   const handleClearHistory = async () => {
     if (confirm("Are you sure you want to clear all conversation threads? This action cannot be undone.")) {
       try {
-        const token = localStorage.getItem("oryn_token");
+        const token = getCookie("oryn_token");
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const res = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
           method: "DELETE",

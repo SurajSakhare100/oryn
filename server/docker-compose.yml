@@ -4,35 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "${PORT:-8000}:${PORT:-8000}"
     environment:
-      - DATABASE_URL=postgresql://postgres:postgrespassword@postgres:5432/oryn?schema=public
-      - HOST=0.0.0.0
-      - PORT=8000
-      - ENV=development
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      - HOST=${HOST:-0.0.0.0}
+      - PORT=${PORT:-8000}
+      - ENV=${ENV:-development}
       - GROQ_API_KEY=${GROQ_API_KEY}
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_CORS_ORIGINS=${ALLOWED_CORS_ORIGINS:-*}
     restart: always
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: oryn_postgres
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgrespassword
-      - POSTGRES_DB=oryn
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: always
-
-volumes:
-  postgres_data:
