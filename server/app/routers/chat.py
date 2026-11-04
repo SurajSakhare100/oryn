@@ -36,8 +36,8 @@ async def get_conversations(user_id: str = Depends(get_current_user_id)):
                     sorted_msgs = sorted(c.messages, key=lambda m: m.timestamp)
                     for m in sorted_msgs:
                         # Safely parse JSON fields
-                        sources = [Source(**s) for s in m.sources] if m.sources else []
-                        related = [RelatedQuestion(**q) for q in m.relatedQuestions] if m.relatedQuestions else []
+                        sources = [Source(source=s) for s in m.sources] if m.sources else []
+                        related = [RelatedQuestion(question=q) for q in m.relatedQuestions] if m.relatedQuestions else []
                         thinking = m.thinking if m.thinking else []
                         
                         messages.append(Message(
@@ -87,8 +87,8 @@ async def get_conversation(conversation_id: str, user_id: str = Depends(get_curr
                 if c.messages:
                     sorted_msgs = sorted(c.messages, key=lambda m: m.timestamp)
                     for m in sorted_msgs:
-                        sources = [Source(**s) for s in m.sources] if m.sources else []
-                        related = [RelatedQuestion(**q) for q in m.relatedQuestions] if m.relatedQuestions else []
+                        sources = [Source(source=s) for s in m.sources] if m.sources else []
+                        related = [RelatedQuestion(question=q) for q in m.relatedQuestions] if m.relatedQuestions else []
                         thinking = m.thinking if m.thinking else []
                         
                         messages.append(Message(
@@ -182,8 +182,8 @@ async def chat_query(request: ChatRequest, user_id: Optional[str] = Depends(get_
                         if c.messages:
                             sorted_msgs = sorted(c.messages, key=lambda m: m.timestamp)
                             for m in sorted_msgs:
-                                sources = [Source(**s) for s in m.sources] if m.sources else []
-                                related = [RelatedQuestion(**q) for q in m.relatedQuestions] if m.relatedQuestions else []
+                                sources = [Source(source=s) for s in m.sources] if m.sources else []
+                                related = [RelatedQuestion(question=q) for q in m.relatedQuestions] if m.relatedQuestions else []
                                 thinking = m.thinking if m.thinking else []
                                 
                                 existing_messages.append({
