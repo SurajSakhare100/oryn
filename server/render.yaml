@@ -14,9 +14,9 @@ services:
       - key: ENV
         value: production
       - key: AI_INTERNAL_PORT
-        value: 8000
+        value: 8765
       - key: AI_SERVICE_URL
-        value: http://127.0.0.1:8000
+        value: http://127.0.0.1:8765
       - key: DATABASE_URL
         sync: false
       - key: DIRECT_URL

@@ -2,7 +2,16 @@
 set -eu
 
 PUBLIC_PORT="${PORT:-10000}"
-AI_PORT="${AI_INTERNAL_PORT:-8000}"
+AI_PORT="${AI_INTERNAL_PORT:-8765}"
+if [ "$AI_PORT" = "$PUBLIC_PORT" ]; then
+  if [ "$PUBLIC_PORT" = "8765" ]; then
+    AI_PORT=8000
+  else
+    AI_PORT=8765
+  fi
+fi
+
+echo "Starting AI service on internal port $AI_PORT and public API on port $PUBLIC_PORT."
 
 PORT="$AI_PORT" HOST="127.0.0.1" \
   /app/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port "$AI_PORT" &

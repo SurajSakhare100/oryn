@@ -1,6 +1,9 @@
 # Build the Express API and its generated Prisma client.
 FROM node:22-bookworm-slim AS api-builder
 WORKDIR /app/api
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 COPY api/package.json api/package-lock.json ./
 RUN npm ci
 COPY api ./
