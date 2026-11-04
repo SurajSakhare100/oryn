@@ -1,54 +1,53 @@
 # Oryn — AI Answer Engine
 
-An open-source AI-powered answer engine (like Perplexity) built with Next.js, FastAPI, Groq LLM, and PostgreSQL.
-
-## Features
-
-- 🔍 Real-time web search with DuckDuckGo crawling
-- 🤖 LLM-powered answers with inline citations (Groq / LangChain)
-- 💬 Multi-turn conversation history
-- 🔐 JWT-based user authentication
-- 📁 Conversation storage with PostgreSQL (Supabase)
-- 🌐 Fully responsive, dark-mode UI
+An open-source, source-backed answer engine built with Next.js, FastAPI, Groq, and PostgreSQL.
 
 ## Stack
 
-| Layer    | Technology              |
-|----------|-------------------------|
+| Layer | Technology |
+|---|---|
 | Frontend | Next.js 16, Tailwind CSS |
-| Backend  | FastAPI, Python 3.12    |
-| Database | PostgreSQL via Prisma   |
-| LLM      | Groq (LangChain)        |
-| Hosting  | Vercel + Render         |
+| API | Express, TypeScript |
+| AI service | FastAPI, Python 3.14, uv |
+| Database | PostgreSQL via Prisma / Supabase |
+| Search and answer generation | DuckDuckGo, Groq / LangChain |
+| Hosting | Vercel + Render |
 
-## Getting Started
+## Local development
 
-Google sign-in, conversations, and the AI chat gateway run through the Express
-API in `server/api`. FastAPI handles AI generation internally. The Render Docker
-image runs both backend services together; the Next.js frontend remains a
-separate deployment.
+1. Create a Google OAuth **Web application** client and add `http://localhost:3000` as an authorized JavaScript origin.
+2. Copy `server/.env.example` to `server/.env` and set the database URLs, `JWT_SECRET`, `GOOGLE_CLIENT_ID`, and `GROQ_API_KEY`. `AI_SERVICE_TOKEN` must have the same value for both backend processes; the example value is for local development only.
+3. Copy `client/.env.example` to `client/.env.local`. `API_URL` is read by the Next.js server to proxy `/api` requests; it is not exposed in browser JavaScript.
+4. Start the FastAPI service:
 
-1. Create a Google OAuth 2.0 **Web application** client in Google Cloud Console.
-   Add the frontend origin (for local development, `http://localhost:3000`) to
-   **Authorized JavaScript origins**. The legacy redirect flow also uses
-   `http://localhost:3001/api/auth/google/callback`.
-2. Create `server/.env` with `DATABASE_URL`, `DIRECT_URL`, `GOOGLE_CLIENT_ID`,
-   `GOOGLE_CLIENT_SECRET`, `JWT_SECRET`, and `CLIENT_URL=http://localhost:3000`.
-3. Create `client/.env.local` with `NEXT_PUBLIC_API_URL=http://localhost:3001`.
-4. Start the combined backend and Next.js client:
+   ```bash
+   cd server
+   uv sync
+   uv run prisma generate --schema=prisma/schema.prisma
+   uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   ```
 
-```bash
-# Express API + internal FastAPI service
-cd server && docker compose up --build
+5. In a second terminal, start the Express API:
 
-# Frontend
-cd client && npm run dev
-```
+   ```bash
+   cd server/api
+   npm ci
+   npx prisma generate
+   npm run dev
+   ```
 
-For deployment, set the Render Docker service's `DATABASE_URL`, `DIRECT_URL`,
-`JWT_SECRET`, `GROQ_API_KEY`, and `GOOGLE_CLIENT_ID`. Set `CLIENT_URL` and
-`ALLOWED_CORS_ORIGINS` to the deployed frontend origin. Set the frontend's
-`NEXT_PUBLIC_API_URL` to the Docker service URL (for example,
-`https://oryn-dbjz.onrender.com`). Google OAuth credentials belong in the API
-environment; they cannot be supplied by the client.
+6. In a third terminal, start the frontend:
 
+   ```bash
+   cd client
+   npm ci
+   npm run dev
+   ```
+
+## Render deployment
+
+`server/render.yaml` defines two native Render web services: `oryn` (Python / uv) and `oryn-api` (Node). The API service calls the AI service using a generated shared token. Both services use the same PostgreSQL database; only the Python service needs `DIRECT_URL` for its schema push. Set `DATABASE_URL`, `DIRECT_URL`, and `GROQ_API_KEY` on the Python service, and `DATABASE_URL`, `JWT_SECRET`, and `GOOGLE_CLIENT_ID` on the API service. Render generates `AI_SERVICE_TOKEN` and shares it with the API service.
+
+Set the frontend's server-side `API_URL` to the Express service URL in Vercel. Do not use a `NEXT_PUBLIC_` prefix. The browser calls same-origin `/api` paths and Next.js proxies them to Express.
+
+Google's OAuth client ID is public by design. Keep database URLs, the Groq key, the JWT signing secret, and the AI service token in backend or hosting environment settings; never put them in frontend variables or commit `.env` files.

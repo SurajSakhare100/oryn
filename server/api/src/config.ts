@@ -10,29 +10,20 @@ export const config = {
 
   // Google OAuth
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "",
-  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || "",
-  GOOGLE_CALLBACK_URL:
-    process.env.GOOGLE_CALLBACK_URL ||
-    "http://localhost:3001/api/auth/google/callback",
 
   // JWT
-  JWT_SECRET: process.env.JWT_SECRET || "changeme_secret",
+  JWT_SECRET: process.env.JWT_SECRET || "",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
-
-  // Frontend
-  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:3000",
-
-  // CORS
-  ALLOWED_CORS_ORIGINS: (
-    process.env.ALLOWED_CORS_ORIGINS || "http://localhost:3000"
-  )
-    .split(",")
-    .map((o) => o.trim()),
 
   // FastAPI AI Service
   AI_SERVICE_URL:
     process.env.AI_SERVICE_URL || "http://localhost:8000",
+  AI_SERVICE_TOKEN: process.env.AI_SERVICE_TOKEN || "",
 
   // Database
   DATABASE_URL: process.env.DATABASE_URL || "",
 };
+
+if (!config.JWT_SECRET) {
+  throw new Error("JWT_SECRET is required. Set it in the API service environment.");
+}

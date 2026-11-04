@@ -10,6 +10,8 @@ export function errorHandler(
   res.status(500).json({
     error: "Internal Server Error",
     message:
-      process.env.NODE_ENV === "development" ? err.message : "Something went wrong",
+      process.env.NODE_ENV === "development"
+        ? err.message
+        : "Oryn couldn't complete this request because of an unexpected server error. Please try again.",
   });
 }

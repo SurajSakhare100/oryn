@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.config import settings
 from app.routers import chat
@@ -21,18 +20,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Enable CORS — in production this service should only be reachable from the Express API gateway
-cors_origins = [origin.strip() for origin in settings.ALLOWED_CORS_ORIGINS.split(",") if origin.strip()]
-if not cors_origins:
-    cors_origins = ["*"]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True if "*" not in cors_origins else False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=["*"]

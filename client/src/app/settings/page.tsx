@@ -6,8 +6,9 @@ import { Database, KeyRound, Shield, Trash2, UserRound } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { getCookie } from "@/lib/cookies";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL = "";
 const MODELS = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"];
 const MODEL_PREFERENCE_EVENT = "oryn-model-preference-change";
 
@@ -49,7 +50,7 @@ export default function SettingsPage() {
       const response = await fetch(`${API_BASE_URL}/api/conversations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error("Could not load your conversations.");
+      if (!response.ok) throw new Error(await getApiErrorMessage(response, "Could not load your conversations."));
       const conversations = await response.json();
       const results = await Promise.all(conversations.map((conversation: { id: string }) =>
         fetch(`${API_BASE_URL}/api/conversations/${encodeURIComponent(conversation.id)}`, {
@@ -57,7 +58,8 @@ export default function SettingsPage() {
           headers: { Authorization: `Bearer ${token}` },
         })
       ));
-      if (results.some((result) => !result.ok)) throw new Error("Some conversations could not be deleted. Please try again.");
+      const failedResponse = results.find((result) => !result.ok);
+      if (failedResponse) throw new Error(await getApiErrorMessage(failedResponse, "Some conversations could not be deleted."));
       setNotice("All conversations deleted.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Could not clear your history.");

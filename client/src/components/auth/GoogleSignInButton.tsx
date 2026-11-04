@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { setCookie } from "@/lib/cookies";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL = "";
 
 interface GoogleCredentialResponse {
   credential: string;
@@ -64,10 +65,11 @@ export default function GoogleSignInButton() {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ credential }),
             });
-            const data = await response.json();
-            if (!response.ok || typeof data.token !== "string") {
-              throw new Error(data.error || "Google sign-in failed. Please try again.");
+            if (!response.ok) {
+              throw new Error(await getApiErrorMessage(response, "Google sign-in failed. Please try again."));
             }
+            const data = await response.json();
+            if (typeof data.token !== "string") throw new Error("Google sign-in returned an invalid response. Please try again.");
             setCookie("oryn_token", data.token);
             router.replace("/chat");
             router.refresh();
@@ -110,8 +112,9 @@ export default function GoogleSignInButton() {
 
     fetch(`${API_BASE_URL}/api/auth/google/client-config`)
       .then(async (response) => {
+        if (!response.ok) throw new Error(await getApiErrorMessage(response, "Google sign-in is unavailable."));
         const data = await response.json();
-        if (!response.ok || typeof data.clientId !== "string") throw new Error(data.error || "Google sign-in is not configured.");
+        if (typeof data.clientId !== "string") throw new Error("Google sign-in is not configured.");
         if (!cancelled) setClientId(data.clientId);
       })
       .catch((configError: unknown) => {

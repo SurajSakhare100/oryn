@@ -6,12 +6,17 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from prisma import Json
 from app.schemas.chat import ChatRequest, ChatResponse, Conversation, Message, Source, RelatedQuestion, MessageHistory
 from app.services.groq_service import groq_service
+from app.services.search_service import SearchUnavailableError
 from app.db import db_helper
-from app.dependencies import get_current_user_id, get_optional_user_id
+from app.dependencies import get_current_user_id, get_optional_user_id, require_api_gateway
 from typing import List, Optional
 
 logger = logging.getLogger("uvicorn")
-router = APIRouter(prefix="/api/chat", tags=["Chat"])
+router = APIRouter(
+    prefix="/api/chat",
+    tags=["Chat"],
+    dependencies=[Depends(require_api_gateway)],
+)
 
 # Temporary in-memory store in case PostgreSQL is not connected
 IN_MEMORY_CONVS = {}
@@ -239,11 +244,16 @@ async def chat_query(request: ChatRequest, user_id: Optional[str] = Depends(get_
             model=request.model,
             web_search=request.webSearch if request.webSearch is not None else True
         )
-    except Exception as e:
-        logger.error(f"LLM generation failed: {e}")
+    except SearchUnavailableError:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error generating answer: {str(e)}"
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Web search is temporarily unavailable. Please try again shortly.",
+        )
+    except Exception:
+        logger.exception("AI answer generation failed")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Oryn couldn't generate an answer right now. Please try again shortly.",
         )
 
     # 4. Append Assistant Message

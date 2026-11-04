@@ -1,5 +1,23 @@
+import hmac
 from fastapi import Header, HTTPException, status
 from typing import Optional
+from app.config import settings
+
+
+async def require_api_gateway(x_oryn_api_key: Optional[str] = Header(None, alias="X-Oryn-API-Key")) -> None:
+    """Accept AI-service requests only when the shared gateway key is valid."""
+    expected = settings.AI_SERVICE_TOKEN
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI service gateway authentication is not configured.",
+        )
+
+    if not x_oryn_api_key or not hmac.compare_digest(x_oryn_api_key, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="This endpoint accepts requests from the Oryn API only.",
+        )
 
 async def get_current_user_id(x_user_id: Optional[str] = Header(None)) -> str:
     """

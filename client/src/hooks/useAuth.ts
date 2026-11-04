@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getCookie, setCookie, deleteCookie } from "@/lib/cookies";
+import { getCookie, deleteCookie } from "@/lib/cookies";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL = "";
 
 export interface User {
   id: string;

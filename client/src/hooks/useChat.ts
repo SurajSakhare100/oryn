@@ -3,8 +3,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { Message, Conversation, ThinkingStep } from "@/lib/types";
 import { generateId } from "@/lib/utils";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_BASE_URL = "";
 
 const THINKING_STEPS: ThinkingStep[] = [
   "Searching web...",
@@ -95,7 +96,7 @@ export function useChat(token: string | null) {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!response.ok) throw new Error("Could not delete this conversation. Please try again.");
+    if (!response.ok) throw new Error(await getApiErrorMessage(response, "Could not delete this conversation."));
     setConversations((current) => current.filter((conversation) => conversation.id !== id));
     setActiveId((current) => current === id ? null : current);
   }, [token]);
@@ -220,16 +221,21 @@ export function useChat(token: string | null) {
             }
           });
         } else {
-          throw new Error("Server returned non-200 status");
+          throw new Error(await getApiErrorMessage(response, "Oryn couldn't answer this question."));
         }
       } catch (err) {
         console.error("Backend error, falling back to mock response", err);
         setThinkingStep(null);
 
+        const message = err instanceof TypeError
+          ? "Could not connect to Oryn. Check your connection and try again."
+          : err instanceof Error
+            ? err.message
+            : "Oryn couldn't complete this request. Please try again.";
         const fallbackMsg: Message = {
           id: generateId(),
           role: "assistant",
-          content: "### Connection Error\n\nI was unable to reach the Oryn server at http://localhost:8000. Please make sure the FastAPI server is running.",
+          content: `### Couldn't complete your request\n\n${message}`,
           timestamp: new Date(),
         };
 

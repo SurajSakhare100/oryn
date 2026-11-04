@@ -3,13 +3,17 @@ import asyncio
 import httpx
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from groq import Groq
 from duckduckgo_search import DDGS
 from app.config import settings
 from app.schemas.chat import MessageHistory, Source
 
 logger = logging.getLogger("uvicorn")
+
+class SearchUnavailableError(Exception):
+    """Raised when search providers could not be reached."""
+
 
 class SearchService:
     def __init__(self):
@@ -64,7 +68,7 @@ class SearchService:
             logger.error(f"Error in query enhancer: {e}. Falling back to original.")
             return query
 
-    async def scrape_ddg_html(self, query: str) -> List[Dict[str, Any]]:
+    async def scrape_ddg_html(self, query: str) -> Optional[List[Dict[str, Any]]]:
         """
         Scrapes duckduckgo html search directly for robustness.
         """
@@ -103,9 +107,10 @@ class SearchService:
                             if len(results) >= 5:
                                 break
                     return results
+                logger.warning("DuckDuckGo HTML search returned HTTP %s", response.status_code)
         except Exception as e:
             logger.error(f"Error scraping DDG HTML: {e}")
-        return []
+        return None
 
     async def crawl_page(self, url: str, client: httpx.AsyncClient) -> str:
         """
@@ -146,6 +151,8 @@ class SearchService:
         
         # 1. Scraping HTML directly (primary robust method)
         raw_results = await self.scrape_ddg_html(query)
+        primary_failed = raw_results is None
+        raw_results = raw_results or []
         
         # 2. Fallback to DDGS library if direct scraping failed
         if not raw_results:
@@ -161,6 +168,8 @@ class SearchService:
                 logger.error(f"DDGS library fallback search failed: {e}")
             
         if not raw_results:
+            if primary_failed:
+                raise SearchUnavailableError("All configured web search providers are unavailable")
             logger.warning("No search results returned from both scraping and DDGS.")
             return [], []
 

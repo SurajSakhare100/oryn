@@ -1,25 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
-
-import { getCookie } from "@/lib/cookies";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ChatPage() {
   const router = useRouter();
-  const [authorized, setAuthorized] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { token, loading } = useAuth();
 
   useEffect(() => {
-    const token = getCookie("oryn_token");
-    if (!token) {
-      router.push("/login");
-    } else {
-      setAuthorized(true);
-    }
-    setLoading(false);
-  }, [router]);
+    if (!loading && !token) router.replace("/login");
+  }, [loading, router, token]);
 
   if (loading) {
     return (
@@ -29,7 +21,7 @@ export default function ChatPage() {
     );
   }
 
-  if (!authorized) {
+  if (!token) {
     return null;
   }
 

@@ -1,13 +1,10 @@
 import express from "express";
-import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 
 import { config } from "./config";
-import "./lib/passport"; // Initialize passport strategies
-
 import authRouter from "./routes/auth";
 import conversationsRouter from "./routes/conversations";
 import chatRouter from "./routes/chat";
@@ -20,21 +17,6 @@ const app = express();
 app.use(
   helmet({
     contentSecurityPolicy: false, // Let the frontend handle CSP
-  })
-);
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (e.g. curl, mobile apps)
-      if (!origin) return callback(null, true);
-      if (config.ALLOWED_CORS_ORIGINS.includes("*") || config.ALLOWED_CORS_ORIGINS.includes(origin)) {
-        return callback(null, true);
-      }
-      callback(new Error(`CORS: origin ${origin} is not allowed`));
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 app.use(express.json({ limit: "2mb" }));
@@ -88,7 +70,6 @@ async function start() {
   app.listen(config.PORT, () => {
     console.log(`\n🚀 Oryn API Server running on http://localhost:${config.PORT}`);
     console.log(`   Environment: ${config.NODE_ENV}`);
-    console.log(`   Google OAuth callback: ${config.GOOGLE_CALLBACK_URL}`);
     console.log(`   AI Service: ${config.AI_SERVICE_URL}\n`);
   });
 }
