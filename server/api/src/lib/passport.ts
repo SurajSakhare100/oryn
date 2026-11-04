@@ -4,8 +4,9 @@ import {
   Profile,
   VerifyCallback,
 } from "passport-google-oauth20";
-import { prisma } from "../lib/prisma";
 import { config } from "../config";
+import { prisma } from "./prisma";
+import { findOrCreateGoogleUser } from "./googleAccount";
 
 if (config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET) passport.use(
   new GoogleStrategy(
@@ -27,60 +28,12 @@ if (config.GOOGLE_CLIENT_ID && config.GOOGLE_CLIENT_SECRET) passport.use(
           return done(new Error("No email found in Google profile"));
         }
 
-        const googleId = profile.id;
-        const displayName =
-          profile.displayName ||
-          profile.name?.givenName ||
-          email.split("@")[0];
-        const avatarUrl = profile.photos?.[0]?.value || null;
-
-        // Try to find user by googleId first, then by email
-        let user = await prisma.user.findUnique({ where: { googleId } });
-
-        if (!user) {
-          // User might exist via another auth method (email) — link accounts
-          user = await prisma.user.findUnique({ where: { email } });
-
-          if (user) {
-            // Link Google ID to existing account
-            user = await prisma.user.update({
-              where: { id: user.id },
-              data: {
-                googleId,
-                avatarUrl: avatarUrl ?? undefined,
-              },
-            });
-          } else {
-            // Brand new user — generate unique username from displayName
-            let username = displayName
-              .toLowerCase()
-              .replace(/[^a-z0-9_]/g, "_")
-              .slice(0, 24);
-
-            // Ensure uniqueness
-            const existing = await prisma.user.findUnique({
-              where: { username },
-            });
-            if (existing) {
-              username = `${username}_${googleId.slice(-6)}`;
-            }
-
-            user = await prisma.user.create({
-              data: {
-                email,
-                username,
-                googleId,
-                avatarUrl: avatarUrl ?? undefined,
-              },
-            });
-          }
-        } else if (avatarUrl && user.avatarUrl !== avatarUrl) {
-          // Update avatar if changed
-          user = await prisma.user.update({
-            where: { id: user.id },
-            data: { avatarUrl },
-          });
-        }
+        const user = await findOrCreateGoogleUser({
+          googleId: profile.id,
+          email,
+          displayName: profile.displayName || profile.name?.givenName || email.split("@")[0],
+          avatarUrl: profile.photos?.[0]?.value || null,
+        });
 
         return done(null, user);
       } catch (err) {

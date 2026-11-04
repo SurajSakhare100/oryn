@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Search, Plus, MessageSquare,
-  Clock, LogIn, Settings as SettingsIcon, Trash2,
+  Clock, LogIn, LogOut, Settings as SettingsIcon, Trash2, ChevronUp,
 } from "lucide-react";
 import { Conversation } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,24 @@ export default function Sidebar({
   onLoginClick,
 }: SidebarProps) {
   const [search, setSearch] = useState("");
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!accountMenuRef.current?.contains(event.target as Node)) setAccountMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setAccountMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [accountMenuOpen]);
 
   const filtered = conversations.filter((c) =>
     c.title.toLowerCase().includes(search.toLowerCase())
@@ -163,26 +181,42 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Settings Navigation */}
-      {user && (
-        <div className="px-3 py-1">
-          <Link
-            href="/settings"
-            className={cn(
-              "flex items-center gap-3 w-full rounded-xl px-3 py-2 text-sm font-medium",
-              "text-stone-500 hover:bg-stone-50 hover:text-stone-700 transition-colors",
-            )}
-          >
-            <SettingsIcon size={16} className="shrink-0" />
-            <span>Settings</span>
-          </Link>
-        </div>
-      )}
-
       {/* User profile */}
-      <div className="border-t border-stone-100 px-3 py-3 flex items-center gap-3">
+      <div ref={accountMenuRef} className="relative border-t border-stone-100 px-3 py-3">
         {user ? (
           <>
+            {accountMenuOpen && (
+              <div
+                role="menu"
+                aria-label="Account menu"
+                className="absolute bottom-[calc(100%+0.25rem)] left-3 right-3 z-30 rounded-xl border border-stone-200 bg-white p-1.5 shadow-lg shadow-stone-900/10"
+              >
+                <Link
+                  href="/settings"
+                  role="menuitem"
+                  onClick={() => setAccountMenuOpen(false)}
+                  className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-stone-600 transition hover:bg-stone-50 hover:text-stone-900"
+                >
+                  <SettingsIcon size={15} className="text-stone-400" />
+                  Settings
+                </Link>
+                <button
+                  role="menuitem"
+                  onClick={() => { setAccountMenuOpen(false); onLogout(); }}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm text-rose-600 transition hover:bg-rose-50"
+                >
+                  <LogOut size={15} />
+                  Log out
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={accountMenuOpen}
+              onClick={() => setAccountMenuOpen((open) => !open)}
+              className="flex w-full items-center gap-3 rounded-xl p-1 text-left transition hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dce8d1]"
+            >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#466536] text-xs font-bold uppercase text-white">
               {user.username ? user.username[0] : user.email[0]}
             </div>
@@ -192,12 +226,7 @@ export default function Sidebar({
               </p>
               <p className="truncate text-xs text-stone-400">{user.email}</p>
             </div>
-            <button
-                onClick={onLogout}
-                className="p-1.5 rounded-md text-stone-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
-                title="Log Out"
-              >
-                <LogIn size={14} className="rotate-180" />
+              <ChevronUp size={15} className={cn("shrink-0 text-stone-400 transition-transform", accountMenuOpen && "rotate-180")} />
             </button>
           </>
         ) : (
