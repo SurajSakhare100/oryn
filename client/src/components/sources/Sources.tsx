@@ -20,14 +20,14 @@ export default function Sources({ sources }: SourcesProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
           Sources ({sources.length})
         </h3>
         
         {sources.length > 2 && (
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-1 text-xs font-medium text-teal-400 hover:text-teal-300 transition-colors"
+            className="flex items-center gap-1 text-xs font-medium text-[#587b3f] transition-colors hover:text-[#3f5e32]"
           >
             {isOpen ? (
               <>
@@ -51,10 +51,10 @@ export default function Sources({ sources }: SourcesProps) {
             href={source.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-start gap-2.5 p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all group"
+            className="group flex items-start gap-2.5 rounded-xl border border-stone-200 bg-white p-2.5 transition-all hover:border-[#cbd9bf] hover:bg-[#fbfcf9]"
           >
             {/* Favicon badge */}
-            <div className="w-6 h-6 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-400 shrink-0 group-hover:border-teal-500/40 transition-colors">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded border border-stone-200 bg-[#f4f7f0] text-[10px] font-bold text-stone-500 transition-colors group-hover:border-[#cbd9bf]">
               {source.favicon && source.favicon.startsWith("http") ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={source.favicon} alt="" className="w-3.5 h-3.5 object-contain" onError={(e) => {
@@ -66,14 +66,14 @@ export default function Sources({ sources }: SourcesProps) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1">
-                <p className="text-xs font-medium text-zinc-300 truncate group-hover:text-teal-400 transition-colors">
+                <p className="truncate text-xs font-medium text-stone-700 transition-colors group-hover:text-[#466536]">
                   {source.title}
                 </p>
-                <ExternalLink size={8} className="text-zinc-600 shrink-0 group-hover:text-teal-500" />
+                <ExternalLink size={8} className="shrink-0 text-stone-400 group-hover:text-[#587b3f]" />
               </div>
-              <p className="text-[10px] text-zinc-500 truncate mt-0.5">{source.description}</p>
+              <p className="mt-0.5 truncate text-[10px] text-stone-500">{source.description}</p>
             </div>
-            <span className="text-[10px] text-zinc-600 shrink-0 font-mono">[{source.id}]</span>
+            <span className="shrink-0 font-mono text-[10px] text-stone-400">[{source.id}]</span>
           </a>
         ))}
       </div>

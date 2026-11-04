@@ -217,10 +217,8 @@ async def chat_query(request: ChatRequest, user_id: Optional[str] = Depends(get_
 
     # 3. Call LLM Service
     ALLOWED_MODELS = [
-        "mixtral-8x7b-32768",
-        "llama-3.1-8b-instant",
-        "llama-3.3-70b-versatile",
-        "gemma2-9b-it"
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b"
     ]
     if request.model and request.model not in ALLOWED_MODELS:
         raise HTTPException(
@@ -343,8 +341,6 @@ async def list_models():
     Returns list of supported Groq models.
     """
     return [
-        "mixtral-8x7b-32768",
-        "llama-3.1-8b-instant",
-        "llama-3.3-70b-versatile",
-        "gemma2-9b-it"
+        "openai/gpt-oss-120b",
+        "openai/gpt-oss-20b"
     ]

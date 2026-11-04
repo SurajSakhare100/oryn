@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -9,7 +10,7 @@ import ChatWindow from "@/components/chat/ChatWindow";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function AppLayout() {
+export default function AppLayout({ children }: { children?: ReactNode }) {
   const router = useRouter();
   const { user, token, logout } = useAuth();
   const {
@@ -20,6 +21,7 @@ export default function AppLayout() {
     thinkingStep,
     newChat,
     selectConversation,
+    deleteConversation,
     sendMessage,
     availableModels,
     selectedModel,
@@ -35,7 +37,7 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-zinc-950 overflow-hidden font-sans">
+    <div className="flex h-screen overflow-hidden bg-[#fbfcf9] font-sans text-[#15201b]">
       {/* Desktop Sidebar */}
       <div className="hidden md:flex">
         <Sidebar
@@ -43,6 +45,7 @@ export default function AppLayout() {
           activeId={activeId}
           onSelect={selectConversation}
           onNewChat={newChat}
+          onDelete={deleteConversation}
           user={user}
           onLogout={handleLogout}
           onLoginClick={() => router.push("/login")}
@@ -72,6 +75,7 @@ export default function AppLayout() {
                 activeId={activeId}
                 onSelect={(id) => { selectConversation(id); setMobileOpen(false); }}
                 onNewChat={() => { newChat(); setMobileOpen(false); }}
+                onDelete={deleteConversation}
                 user={user}
                 onLogout={handleLogout}
                 onLoginClick={() => { router.push("/login"); setMobileOpen(false); }}
@@ -84,41 +88,43 @@ export default function AppLayout() {
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 md:hidden">
+        <div className="flex items-center justify-between border-b border-stone-200/80 bg-white/90 px-4 py-3 backdrop-blur md:hidden">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileOpen(true)}
-              className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="rounded-lg p-2 text-stone-500 transition-colors hover:bg-stone-100 hover:text-stone-900"
             >
               <Menu size={18} />
             </button>
-            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center">
-              <span className="text-white font-bold text-xs">O</span>
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#466536]">
+              <span className="text-xs font-bold text-white">O</span>
             </div>
-            <span className="text-sm font-semibold text-white">Oryn</span>
+            <span className="text-sm font-semibold text-[#17211a]">Oryn</span>
           </div>
 
           {!user && (
             <button
               onClick={() => router.push("/login")}
-              className="px-3 py-1 rounded-lg text-xs font-semibold bg-teal-500 text-zinc-950 hover:bg-teal-400 transition-colors"
+              className="rounded-lg bg-lime-300 px-3 py-1 text-xs font-semibold text-[#26351e] transition-colors hover:bg-lime-400"
             >
               Sign In
             </button>
           )}
         </div>
 
-        <ChatWindow
-          conversation={activeConversation}
-          isLoading={isLoading}
-          thinkingStep={thinkingStep}
-          onSend={sendMessage}
-          availableModels={availableModels}
-          selectedModel={selectedModel}
-          setSelectedModel={setSelectedModel}
-          webSearchEnabled={webSearchEnabled}
-          setWebSearchEnabled={setWebSearchEnabled}
-        />
+        {children ?? (
+          <ChatWindow
+            conversation={activeConversation}
+            isLoading={isLoading}
+            thinkingStep={thinkingStep}
+            onSend={sendMessage}
+            availableModels={availableModels}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+            webSearchEnabled={webSearchEnabled}
+            setWebSearchEnabled={setWebSearchEnabled}
+          />
+        )}
       </div>
     </div>
   );

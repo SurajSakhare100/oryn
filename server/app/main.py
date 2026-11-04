@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.config import settings
-from app.routers import chat, auth
+from app.routers import chat
 from app.db import connect_db, close_db
 from app.middleware.rate_limit import RateLimitMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
@@ -17,11 +17,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Backend API server for Oryn AI Answer Engine, powered by Groq LLM and PostgreSQL via Prisma.",
+    description="AI microservice for Oryn — powered by Groq LLM. Auth and user management are handled by the Express API gateway.",
     lifespan=lifespan
 )
 
-# Enable CORS for the client frontend
+# Enable CORS — in production this service should only be reachable from the Express API gateway
 cors_origins = [origin.strip() for origin in settings.ALLOWED_CORS_ORIGINS.split(",") if origin.strip()]
 if not cors_origins:
     cors_origins = ["*"]
@@ -29,7 +29,7 @@ if not cors_origins:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_credentials=True if "*" not in cors_origins else False, # Credentials must be disabled if wildcard * is allowed in FastAPI
+    allow_credentials=True if "*" not in cors_origins else False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -50,14 +50,14 @@ app.add_middleware(ErrorHandlerMiddleware)
 
 # Include routers
 app.include_router(chat.router)
-app.include_router(auth.router)
 
 @app.get("/")
 async def root():
     return {
-        "message": "Welcome to Oryn AI Answer Engine Server",
+        "message": "Oryn AI Service",
         "status": "healthy",
-        "version": settings.VERSION
+        "version": settings.VERSION,
+        "note": "Authentication is handled by the Express API gateway. This service reads X-User-Id from trusted gateway requests."
     }
 
 @app.get("/health")

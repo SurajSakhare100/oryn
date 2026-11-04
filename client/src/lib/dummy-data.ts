@@ -143,27 +143,27 @@ export const DUMMY_CONVERSATIONS: Conversation[] = [
 export const SUGGESTED_PROMPTS = [
   {
     id: 1,
-    title: "Explain quantum computing",
-    subtitle: "Break down qubits, superposition & entanglement",
-    icon: "⚛️",
+    title: "What are some easy dinners I can make this week?",
+    subtitle: "Simple ideas with everyday ingredients",
+    icon: "🍲",
   },
   {
     id: 2,
-    title: "Build a Next.js app",
-    subtitle: "Step-by-step guide from zero to deployed",
-    icon: "🚀",
+    title: "How can I get better sleep?",
+    subtitle: "Small habits that make a difference",
+    icon: "🌙",
   },
   {
     id: 3,
-    title: "Latest AI trends 2026",
-    subtitle: "What's shaping the AI landscape right now",
-    icon: "🤖",
+    title: "What should I see on a first trip to Kyoto?",
+    subtitle: "A relaxed guide to neighborhoods and sights",
+    icon: "🗺️",
   },
   {
     id: 4,
-    title: "How does RAG work?",
-    subtitle: "Retrieval-Augmented Generation explained simply",
-    icon: "🧠",
+    title: "How can I make my home use less energy?",
+    subtitle: "Practical changes that can lower energy use",
+    icon: "🌿",
   },
 ];
 

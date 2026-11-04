@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Message, Conversation, ThinkingStep } from "@/lib/types";
 import { generateId } from "@/lib/utils";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 const THINKING_STEPS: ThinkingStep[] = [
   "Searching web...",
@@ -18,8 +18,16 @@ export function useChat(token: string | null) {
   const [isLoading, setIsLoading] = useState(false);
   const [thinkingStep, setThinkingStep] = useState<ThinkingStep | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [selectedModel, setSelectedModelState] = useState<string>("");
   const [webSearchEnabled, setWebSearchEnabled] = useState<boolean>(true);
+
+  const setSelectedModel = useCallback((model: string) => {
+    setSelectedModelState(model);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("oryn_selected_model", model);
+      window.dispatchEvent(new Event("oryn-model-preference-change"));
+    }
+  }, []);
 
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
 
@@ -31,8 +39,11 @@ export function useChat(token: string | null) {
         if (res.ok) {
           const models = await res.json();
           setAvailableModels(models);
-          if (models.includes("llama-3.3-70b-versatile")) {
-            setSelectedModel("llama-3.3-70b-versatile");
+          const savedModel = localStorage.getItem("oryn_selected_model");
+          if (savedModel && models.includes(savedModel)) {
+            setSelectedModel(savedModel);
+          } else if (models.includes("openai/gpt-oss-120b")) {
+            setSelectedModel("openai/gpt-oss-120b");
           } else if (models.length > 0) {
             setSelectedModel(models[0]);
           }
@@ -42,7 +53,7 @@ export function useChat(token: string | null) {
       }
     }
     fetchModels();
-  }, []);
+  }, [setSelectedModel]);
 
   // 1. Fetch conversations on load
   const fetchConversations = useCallback(async () => {
@@ -51,7 +62,7 @@ export function useChat(token: string | null) {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE_URL}/api/chat/conversations`, {
+      const res = await fetch(`${API_BASE_URL}/api/conversations`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -62,13 +73,13 @@ export function useChat(token: string | null) {
         setConversations(data);
       }
     } catch (e) {
-      console.warn("Could not connect to FastAPI server. Running in client-only mode.", e);
+      console.warn("Could not load saved conversations from the Oryn API.", e);
     }
   }, [token]);
 
   useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations, token]);
+    queueMicrotask(() => { void fetchConversations(); });
+  }, [fetchConversations]);
 
   const newChat = useCallback(() => {
     setActiveId(null);
@@ -77,6 +88,17 @@ export function useChat(token: string | null) {
   const selectConversation = useCallback((id: string) => {
     setActiveId(id);
   }, []);
+
+  const deleteConversation = useCallback(async (id: string) => {
+    if (!token) throw new Error("Sign in to delete saved conversations.");
+    const response = await fetch(`${API_BASE_URL}/api/conversations/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) throw new Error("Could not delete this conversation. Please try again.");
+    setConversations((current) => current.filter((conversation) => conversation.id !== id));
+    setActiveId((current) => current === id ? null : current);
+  }, [token]);
 
   const sendMessage = useCallback(
     async (content: string) => {
@@ -127,9 +149,9 @@ export function useChat(token: string | null) {
         const currentConv = originalConvs.find((c) => c.id === targetId);
         const historyPayload = currentConv
           ? currentConv.messages.map((m) => ({
-              role: m.role,
-              content: m.content,
-            }))
+            role: m.role,
+            content: m.content,
+          }))
           : [];
 
         const requestBody = {
@@ -157,7 +179,7 @@ export function useChat(token: string | null) {
 
         if (response.ok) {
           const responseData = await response.json();
-          
+
           const assistantMsg: Message = {
             id: generateId(),
             role: "assistant",
@@ -175,7 +197,7 @@ export function useChat(token: string | null) {
           setConversations((prev) => {
             // Remove the temporary conversation if we started a new one
             const filtered = prev.filter((c) => c.id !== targetId);
-            
+
             // Look for existing thread
             const existing = prev.find((c) => c.id === returnedId);
             if (existing) {
@@ -233,6 +255,7 @@ export function useChat(token: string | null) {
     thinkingStep,
     newChat,
     selectConversation,
+    deleteConversation,
     sendMessage,
     availableModels,
     selectedModel,
