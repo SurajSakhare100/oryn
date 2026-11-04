@@ -11,7 +11,7 @@ export default function HeroSection({
   return (
     <section className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#fbfcf9] px-5 pb-12 pt-24 text-center" id="home">
       <div className="absolute inset-0 -z-20 bg-[url('/nature.png')] bg-cover bg-[center_56%]" aria-hidden="true" />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/45 via-white/35 to-[#fbfcf9]/80" aria-hidden="true" />
+      {/* <div className="absolute inset-0 -z-10 bg-gradient-to-b from-white/45 via-white/35 to-[#fbfcf9]/80" aria-hidden="true" /> */}
       <div className="absolute -inset-x-10 -bottom-24 -z-10 h-64 rounded-[50%] bg-[#fbfcf9]/75 blur-3xl" aria-hidden="true" />
       <div className="mx-auto mt-8 max-w-3xl">
         <span className="inline-flex items-center rounded-full border border-white/80 bg-white/65 px-3 py-1.5 text-[10px] font-bold tracking-[0.16em] text-[#5f7760] shadow-sm backdrop-blur-md"><i className="mr-2 h-1.5 w-1.5 rounded-full bg-lime-500" />LIVE WEB, CLEAR ANSWERS</span>
