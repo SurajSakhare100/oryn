@@ -1,8 +1,7 @@
 from prisma import Prisma
 from app.config import settings
+import asyncio
 import logging
-import subprocess
-import os
 
 logger = logging.getLogger("uvicorn")
 
@@ -11,52 +10,32 @@ class Database:
 
 db_helper = Database()
 
-def run_prisma_db_push():
-    """
-    Runs 'prisma db push' to automatically synchronize the schema to the database.
-    Uses DIRECT_URL for the migration connection (required for Supabase pooler setups).
-    """
-    try:
-        logger.info("Synchronizing database schema via Prisma db push...")
-        env = os.environ.copy()
-        env["DATABASE_URL"] = settings.DATABASE_URL
-        # DIRECT_URL is needed by Prisma to bypass the pooler for schema migrations
-        if hasattr(settings, "DIRECT_URL") and settings.DIRECT_URL:
-            env["DIRECT_URL"] = settings.DIRECT_URL
-
-        result = subprocess.run(
-            ["prisma", "db", "push", "--skip-generate"],
-            capture_output=True,
-            text=True,
-            env=env
-        )
-        if result.returncode != 0:
-            # Fallback to python -m prisma
-            result = subprocess.run(
-                ["python", "-m", "prisma", "db", "push", "--skip-generate"],
-                capture_output=True,
-                text=True,
-                env=env
-            )
-
-        if result.returncode == 0:
-            logger.info("Database schema synchronized successfully")
-        else:
-            logger.error(f"Failed to push database schema. Stderr: {result.stderr}")
-    except Exception as e:
-        logger.error(f"Error executing database schema synchronization: {e}")
-
-
 async def connect_db():
-    try:
-        # Run db push before connecting
-        run_prisma_db_push()
-        
-        db_helper.prisma = Prisma()
-        await db_helper.prisma.connect()
-        logger.info("Connected to PostgreSQL successfully via Prisma")
-    except Exception as e:
-        logger.error(f"Failed to connect to PostgreSQL: {e}")
+    if not settings.DATABASE_URL:
+        logger.error("DATABASE_URL is missing; saved conversations will be unavailable.")
+        return
+
+    while True:
+        client = Prisma()
+        try:
+            await asyncio.wait_for(client.connect(), timeout=15)
+            db_helper.prisma = client
+            logger.info("Connected to PostgreSQL successfully via Prisma")
+            return
+        except asyncio.CancelledError:
+            raise
+        except Exception as error:
+            logger.warning(
+                "Database connection failed (%s: %s); retrying in 10 seconds.",
+                type(error).__name__,
+                error,
+            )
+            try:
+                if client.is_connected():
+                    await client.disconnect()
+            except Exception:
+                logger.debug("Could not close the failed Prisma connection.")
+            await asyncio.sleep(10)
 
 async def close_db():
     if db_helper.prisma and db_helper.prisma.is_connected():

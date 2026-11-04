@@ -46,7 +46,7 @@ An open-source, source-backed answer engine built with Next.js, FastAPI, Groq, a
 
 ## Render deployment
 
-`server/render.yaml` defines two native Render web services: `oryn` (Python / uv) and `oryn-api` (Node). The API service calls the AI service using a generated shared token. Both services use the same PostgreSQL database; only the Python service needs `DIRECT_URL` for its schema push. Set `DATABASE_URL`, `DIRECT_URL`, and `GROQ_API_KEY` on the Python service, and `DATABASE_URL`, `JWT_SECRET`, and `GOOGLE_CLIENT_ID` on the API service. Render generates `AI_SERVICE_TOKEN` and shares it with the API service.
+`server/render.yaml` defines two native Render web services: `oryn` (Python / uv) and `oryn-api` (Node). The API service calls the AI service using a generated shared token. Both services use the same PostgreSQL database. Set `DATABASE_URL`, `DIRECT_URL`, and `GROQ_API_KEY` on the Python service, and `DATABASE_URL`, `JWT_SECRET`, and `GOOGLE_CLIENT_ID` on the API service. `DIRECT_URL` is used for Prisma schema generation and manual schema updates, not during app startup. Render generates `AI_SERVICE_TOKEN` and shares it with the API service. Apply schema changes separately with `uv run prisma db push --schema=prisma/schema.prisma`; the app no longer modifies the database during startup.
 
 Set the frontend's server-side `API_URL` to the Express service URL in Vercel. Do not use a `NEXT_PUBLIC_` prefix. The browser calls same-origin `/api` paths and Next.js proxies them to Express.
 
