@@ -289,6 +289,7 @@ async def chat_query(request: ChatRequest, user_id: Optional[str] = Depends(get_
                     "update": {
                         "title": title,
                         "timestamp": timestamp_str,
+                        **({"userId": user_id} if user_id else {}),
                     }
                 }
             )

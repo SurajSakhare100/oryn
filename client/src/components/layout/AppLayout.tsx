@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -10,11 +10,14 @@ import ChatWindow from "@/components/chat/ChatWindow";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 
-export default function AppLayout({ children }: { children?: ReactNode }) {
+export default function AppLayout({ children, requireAuth = false }: { children?: ReactNode; requireAuth?: boolean }) {
   const router = useRouter();
-  const { user, token, logout } = useAuth();
+  const { user, token, loading: authLoading, logout } = useAuth();
   const {
     conversations,
+    isLoadingHistory,
+    historyError,
+    refreshConversations,
     activeConversation,
     activeId,
     isLoading,
@@ -31,6 +34,18 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
   } = useChat(token);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  useEffect(() => {
+    if (requireAuth && !authLoading && !token) router.replace("/login");
+  }, [authLoading, requireAuth, router, token]);
+
+  if (requireAuth && (authLoading || !token)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#fbfcf9]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#466536] border-t-transparent" />
+      </div>
+    );
+  }
+
   const handleLogout = () => {
     logout();
     router.push("/");
@@ -42,6 +57,9 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
       <div className="hidden md:flex">
         <Sidebar
           conversations={conversations}
+          isLoadingHistory={isLoadingHistory}
+          historyError={historyError}
+          onRefreshHistory={refreshConversations}
           activeId={activeId}
           onSelect={selectConversation}
           onNewChat={newChat}
@@ -72,6 +90,9 @@ export default function AppLayout({ children }: { children?: ReactNode }) {
             >
               <Sidebar
                 conversations={conversations}
+                isLoadingHistory={isLoadingHistory}
+                historyError={historyError}
+                onRefreshHistory={refreshConversations}
                 activeId={activeId}
                 onSelect={(id) => { selectConversation(id); setMobileOpen(false); }}
                 onNewChat={() => { newChat(); setMobileOpen(false); }}

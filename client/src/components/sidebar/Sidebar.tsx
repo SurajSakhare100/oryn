@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils";
 
 interface SidebarProps {
   conversations: Conversation[];
+  isLoadingHistory: boolean;
+  historyError: string | null;
+  onRefreshHistory: () => void;
   activeId: string | null;
   onSelect: (id: string) => void;
   onNewChat: () => void;
@@ -31,6 +34,9 @@ function timeAgo(date: Date | string): string {
 
 export default function Sidebar({
   conversations,
+  isLoadingHistory,
+  historyError,
+  onRefreshHistory,
   activeId,
   onSelect,
   onNewChat,
@@ -111,8 +117,23 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
         <p className="px-2 py-2 text-xs font-medium uppercase tracking-wider text-stone-400">Recent</p>
         {user ? (
-          filtered.length === 0 ? (
-            <p className="px-2 py-4 text-xs italic text-stone-400">No threads found</p>
+          isLoadingHistory && conversations.length === 0 ? (
+            <p className="px-2 py-4 text-xs text-stone-400">Loading saved searches…</p>
+          ) : historyError ? (
+            <div className="mx-1 rounded-xl border border-rose-100 bg-rose-50/70 p-3">
+              <p role="alert" className="text-xs leading-relaxed text-rose-700">{historyError}</p>
+              <button
+                type="button"
+                onClick={onRefreshHistory}
+                className="mt-2 text-xs font-semibold text-rose-700 underline underline-offset-2 hover:text-rose-900"
+              >
+                Retry
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="px-2 py-4 text-xs italic text-stone-400">
+              {search ? "No matching searches" : "Your saved searches will appear here"}
+            </p>
           ) : (
             filtered.map((conv) => (
               <div

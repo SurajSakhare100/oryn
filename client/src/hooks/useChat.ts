@@ -17,6 +17,8 @@ export function useChat(token: string | null) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [thinkingStep, setThinkingStep] = useState<ThinkingStep | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [selectedModel, setSelectedModelState] = useState<string>("");
@@ -60,21 +62,64 @@ export function useChat(token: string | null) {
   const fetchConversations = useCallback(async () => {
     if (!token) {
       setConversations([]);
+      setHistoryError(null);
+      setIsLoadingHistory(false);
       return;
     }
+    setIsLoadingHistory(true);
+    setHistoryError(null);
     try {
       const res = await fetch(`${API_BASE_URL}/api/conversations`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
       });
-      if (res.ok) {
-        const data = await res.json();
-        // Standardize date strings to Date objects if needed, but strings are fine
-        setConversations(data);
+      if (!res.ok) {
+        throw new Error(await getApiErrorMessage(res, "Couldn't load your saved searches."));
       }
-    } catch (e) {
-      console.warn("Could not load saved conversations from the Oryn API.", e);
+
+      const data: unknown = await res.json();
+      if (!Array.isArray(data)) throw new Error("Oryn returned an invalid conversation history response.");
+
+      const conversations = (data as Array<{
+        id: string;
+        title: string;
+        timestamp: string;
+        messages?: Array<{
+          id: string;
+          role: string;
+          content: string;
+          sources?: Message["sources"] | null;
+          relatedQuestions?: Message["relatedQuestions"] | null;
+          thinking?: Message["thinking"] | null;
+          timestamp: string;
+        }>;
+      }>).map((conversation) => ({
+        id: conversation.id,
+        title: conversation.title || "Untitled search",
+        timestamp: new Date(conversation.timestamp),
+        messages: (Array.isArray(conversation.messages) ? conversation.messages : []).map((message) => ({
+          id: message.id,
+          role: message.role === "user" ? "user" as const : "assistant" as const,
+          content: message.content,
+          sources: Array.isArray(message.sources) ? message.sources : undefined,
+          relatedQuestions: Array.isArray(message.relatedQuestions) ? message.relatedQuestions : undefined,
+          thinking: Array.isArray(message.thinking) ? message.thinking : undefined,
+          timestamp: new Date(message.timestamp),
+        })),
+      }));
+
+      setConversations(conversations);
+    } catch (error) {
+      const message = error instanceof TypeError
+        ? "Could not connect to Oryn. Check your connection and try again."
+        : error instanceof Error
+          ? error.message
+          : "Couldn't load your saved searches.";
+      setHistoryError(message);
+      console.error("Could not load saved conversations.", error);
+    } finally {
+      setIsLoadingHistory(false);
     }
   }, [token]);
 
@@ -255,6 +300,9 @@ export function useChat(token: string | null) {
 
   return {
     conversations,
+    isLoadingHistory,
+    historyError,
+    refreshConversations: fetchConversations,
     activeConversation,
     activeId,
     isLoading,
